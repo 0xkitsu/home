@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createRef } from 'react'
-import { VRM, VRMLoaderPlugin, VRMLookAtLoaderPlugin, VRMSpringBoneLoaderPlugin, VRMUtils } from '@pixiv/three-vrm'
+import { VRM, VRMExpressionPresetName, VRMLoaderPlugin, VRMLookAtLoaderPlugin, VRMSpringBoneLoaderPlugin, VRMUtils } from '@pixiv/three-vrm'
 import { Scene, Group, BufferGeometry, Material, Mesh, MeshPhongMaterial, MeshBasicMaterial, Vector3, MeshStandardMaterial, AnimationObjectGroup } from 'three'
 import { useFrame, useLoader } from '@react-three/fiber'
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -24,7 +24,6 @@ export default function VRMAsset({ url, forceShadows, position }: Props) {
 
     const [walking, setWalking] = useState(false);
     const gltf = useLoader(GLTFLoader, url)
-  const mixer = createRef()
   let baseActions: Anims[] = [];
   let additiveActions: Anims[] = [];
 
@@ -122,8 +121,27 @@ export default function VRMAsset({ url, forceShadows, position }: Props) {
 
   }, [gltf, setScene])
 
+  let [nextBlink, setNextBlink] = useState<number>(0);
+  let [nextWink, setNextWink] = useState<number>(0);
+
+  
+  
   useFrame((state, delta) => {
-    if(walking) scene?.position.setX(scene?.position.x > 0 ? scene?.position.x-0.01 : 0);
+
+    setNextBlink(nextBlink - delta);
+    if(nextBlink <= 0){
+      setNextBlink(2+Math.random()*7);
+      vrm?.expressionManager?.setValue( VRMExpressionPresetName.Blink, 1 );
+      setTimeout(()=>{vrm?.expressionManager?.setValue( VRMExpressionPresetName.Blink, 0 )}, 400)
+    }
+
+    setNextWink(nextWink - delta);
+    if(nextWink <= 0){
+      setNextWink(10+Math.random()*70);
+      vrm?.expressionManager?.setValue( VRMExpressionPresetName.BlinkLeft, 1 );
+      setTimeout(()=>{vrm?.expressionManager?.setValue( VRMExpressionPresetName.BlinkLeft, 0 )}, 400)
+    }
+    
     if(animationMixer){
         if(vrm)
         vrm.update(delta)
